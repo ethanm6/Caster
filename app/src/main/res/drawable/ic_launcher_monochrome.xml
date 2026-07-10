@@ -8,8 +8,8 @@
     <group
         android:pivotX="54"
         android:pivotY="54"
-        android:scaleX="0.72"
-        android:scaleY="0.72">
+        android:scaleX="0.58"
+        android:scaleY="0.58">
         <path
             android:fillColor="#FFFFFF"
             android:pathData="M24,30h60c2.2,0 4,1.8 4,4v40c0,2.2 -1.8,4 -4,4H56v-6h26V36H26v8h-6v-10c0,-2.2 1.8,-4 4,-4z" />

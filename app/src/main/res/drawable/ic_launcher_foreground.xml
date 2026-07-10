@@ -4,17 +4,17 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Cast glyph kept inside the 66dp safe-zone circle -->
+    <!-- Monotone cast glyph inside the 66dp safe-zone circle -->
     <group
         android:pivotX="54"
         android:pivotY="54"
-        android:scaleX="0.72"
-        android:scaleY="0.72">
+        android:scaleX="0.58"
+        android:scaleY="0.58">
         <path
-            android:fillColor="#FFFFFF"
+            android:fillColor="@color/ic_launcher_glyph"
             android:pathData="M24,30h60c2.2,0 4,1.8 4,4v40c0,2.2 -1.8,4 -4,4H56v-6h26V36H26v8h-6v-10c0,-2.2 1.8,-4 4,-4z" />
         <path
-            android:fillColor="#FF5722"
+            android:fillColor="@color/ic_launcher_glyph"
             android:pathData="M20,72c3.3,0 6,2.7 6,6h-6zM20,62c8.8,0 16,7.2 16,16h-6c0,-5.5 -4.5,-10 -10,-10zM20,52c14.4,0 26,11.6 26,26h-6c0,-11 -9,-20 -20,-20z" />
     </group>
 </vector>
