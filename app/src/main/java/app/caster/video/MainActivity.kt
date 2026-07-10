@@ -15,6 +15,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
+import androidx.mediarouter.app.MediaRouteChooserDialogFragment
 import com.google.android.gms.cast.MediaInfo
 import com.google.android.gms.cast.MediaLoadRequestData
 import com.google.android.gms.cast.MediaMetadata
@@ -28,6 +29,10 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 
 class MainActivity : AppCompatActivity() {
+
+    companion object {
+        private const val CAST_DIALOG_TAG = "cast_chooser_dialog"
+    }
 
     private lateinit var castContext: CastContext
     private lateinit var statusText: TextView
@@ -194,20 +199,21 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        videoTitle = intent.getStringExtra("title")
+        val explicitTitle = intent.getStringExtra("title")
             ?: intent.getStringExtra(Intent.EXTRA_TITLE)
-            ?: uri.lastPathSegment
-            ?: getString(R.string.default_title)
 
         when (uri.scheme) {
             "http", "https" -> {
+                videoTitle = explicitTitle
+                    ?: uri.lastPathSegment
+                    ?: getString(R.string.default_title)
                 // Cast the URL exactly as received from the sending app.
                 castUrl = uri.toString()
                 castMimeType = intent.type?.takeIf { it != "*/*" }
                     ?: guessMimeType(uri.toString())
                 localFileServed = false
             }
-            "content", "file" -> prepareLocalFile(uri, intent.type)
+            "content", "file" -> prepareLocalFile(uri, intent.type, explicitTitle)
             else -> {
                 Toast.makeText(this, R.string.unsupported_uri, Toast.LENGTH_LONG).show()
                 return
@@ -218,7 +224,7 @@ class MainActivity : AppCompatActivity() {
         maybeCastNow()
     }
 
-    private fun prepareLocalFile(uri: Uri, intentType: String?) {
+    private fun prepareLocalFile(uri: Uri, intentType: String?, explicitTitle: String? = null) {
         val mime = intentType?.takeIf { it != "*/*" }
             ?: contentResolver.getType(uri)
             ?: guessMimeType(uri.toString())
@@ -231,10 +237,26 @@ class MainActivity : AppCompatActivity() {
         castUrl = "http://$ip:${LocalHttpServer.PORT}/video/$token"
         castMimeType = mime
         localFileServed = true
-        if (videoTitle.isEmpty()) {
-            videoTitle = uri.lastPathSegment ?: getString(R.string.default_title)
-        }
+        videoTitle = explicitTitle
+            ?: queryDisplayName(uri)
+            ?: uri.lastPathSegment
+            ?: getString(R.string.default_title)
         titleText.text = videoTitle
+    }
+
+    /** The file name of a content:// or file:// URI, e.g. "Movie.mkv". */
+    private fun queryDisplayName(uri: Uri): String? = when (uri.scheme) {
+        "content" -> try {
+            contentResolver.query(
+                uri, arrayOf(android.provider.OpenableColumns.DISPLAY_NAME), null, null, null
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getString(0) else null
+            }
+        } catch (e: Exception) {
+            null
+        }
+        "file" -> uri.lastPathSegment
+        else -> null
     }
 
     /** Load immediately if already connected, otherwise wait for the user to pick a device. */
@@ -246,7 +268,17 @@ class MainActivity : AppCompatActivity() {
         } else {
             pendingLoad = true
             statusText.text = getString(R.string.status_pick_device)
+            openCastMenu()
         }
+    }
+
+    /** Pop the Cast device chooser, same dialog the toolbar cast button shows. */
+    private fun openCastMenu() {
+        val selector = castContext.mergedSelector ?: return
+        if (supportFragmentManager.findFragmentByTag(CAST_DIALOG_TAG) != null) return
+        MediaRouteChooserDialogFragment().apply {
+            routeSelector = selector
+        }.show(supportFragmentManager, CAST_DIALOG_TAG)
     }
 
     private fun loadMedia(session: CastSession) {
