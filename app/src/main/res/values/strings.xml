@@ -12,6 +12,14 @@
     <string name="status_load_failed">Failed to load media (error %1$d)</string>
     <string name="unsupported_uri">Unsupported link type</string>
     <string name="no_network">No Wi-Fi network — cannot serve local files to the Chromecast</string>
+    <string name="casting_to">Casting to</string>
+    <string name="play_pause">Play or pause</string>
+    <string name="rewind">Rewind 10 seconds</string>
+    <string name="forward">Forward 30 seconds</string>
+    <string name="volume_down">Volume down</string>
+    <string name="volume_up">Volume up</string>
+    <string name="mute">Mute</string>
+    <string name="disconnect">Disconnect</string>
     <string name="server_channel_name">Local streaming server</string>
     <string name="server_notification_title">Serving video to Chromecast</string>
     <string name="server_notification_text">Streaming a local file over Wi-Fi</string>
