@@ -6,5 +6,19 @@
         <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
         <item name="android:statusBarColor">?attr/colorSurface</item>
         <item name="android:windowLightStatusBar" tools:targetApi="23">?attr/isLightTheme</item>
+        <!-- Soften the M3 Expressive press-morph springs; defaults feel too fast. -->
+        <item name="motionSpringFastSpatial">@style/Spring.Caster.Spatial</item>
+        <item name="motionSpringFastEffects">@style/Spring.Caster.Effects</item>
+    </style>
+
+    <!-- Stock fast springs are spatial 800/0.6, effects 3800/1 — these are ~slow tier. -->
+    <style name="Spring.Caster.Spatial" parent="">
+        <item name="stiffness">250</item>
+        <item name="damping">0.8</item>
+    </style>
+
+    <style name="Spring.Caster.Effects" parent="">
+        <item name="stiffness">900</item>
+        <item name="damping">1</item>
     </style>
 </resources>

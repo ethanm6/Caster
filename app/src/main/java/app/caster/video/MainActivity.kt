@@ -18,10 +18,14 @@ import androidx.core.content.ContextCompat
 import com.google.android.gms.cast.MediaInfo
 import com.google.android.gms.cast.MediaLoadRequestData
 import com.google.android.gms.cast.MediaMetadata
+import android.view.View
 import com.google.android.gms.cast.framework.CastButtonFactory
 import com.google.android.gms.cast.framework.CastContext
 import com.google.android.gms.cast.framework.CastSession
 import com.google.android.gms.cast.framework.SessionManagerListener
+import com.google.android.gms.cast.framework.media.RemoteMediaClient
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 
 class MainActivity : AppCompatActivity() {
 
@@ -29,6 +33,16 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusText: TextView
     private lateinit var titleText: TextView
     private lateinit var chooseButton: Button
+    private lateinit var miniBar: MaterialCardView
+    private lateinit var miniTitle: TextView
+    private lateinit var miniDevice: TextView
+    private lateinit var miniPlayPause: MaterialButton
+    private var remoteMediaClient: RemoteMediaClient? = null
+
+    private val mediaCallback = object : RemoteMediaClient.Callback() {
+        override fun onStatusUpdated() = updateMiniBar()
+        override fun onMetadataUpdated() = updateMiniBar()
+    }
 
     /** The URL the Chromecast will fetch, exactly as received (or our local server URL). */
     private var castUrl: String? = null
@@ -39,16 +53,19 @@ class MainActivity : AppCompatActivity() {
 
     private val sessionListener = object : SessionManagerListener<CastSession> {
         override fun onSessionStarted(session: CastSession, sessionId: String) {
+            attachClient(session)
             if (pendingLoad) loadMedia(session)
             updateStatus()
         }
 
         override fun onSessionResumed(session: CastSession, wasSuspended: Boolean) {
+            attachClient(session)
             if (pendingLoad) loadMedia(session)
             updateStatus()
         }
 
         override fun onSessionEnded(session: CastSession, error: Int) {
+            attachClient(null)
             if (localFileServed) {
                 LocalHttpServerService.stop(this@MainActivity)
                 localFileServed = false
@@ -95,6 +112,15 @@ class MainActivity : AppCompatActivity() {
             pickVideo.launch(arrayOf("video/*"))
         }
 
+        miniBar = findViewById(R.id.mini_bar)
+        miniTitle = findViewById(R.id.mini_title)
+        miniDevice = findViewById(R.id.mini_device)
+        miniPlayPause = findViewById(R.id.mini_play_pause)
+        miniBar.setOnClickListener {
+            startActivity(Intent(this, ExpandedControlsActivity::class.java))
+        }
+        miniPlayPause.setOnClickListener { remoteMediaClient?.togglePlayback() }
+
         castContext = CastContext.getSharedInstance(this)
 
         askForNotificationsIfNeeded()
@@ -112,6 +138,7 @@ class MainActivity : AppCompatActivity() {
         castContext.sessionManager.addSessionManagerListener(
             sessionListener, CastSession::class.java
         )
+        attachClient(castContext.sessionManager.currentCastSession)
         updateStatus()
     }
 
@@ -119,7 +146,32 @@ class MainActivity : AppCompatActivity() {
         castContext.sessionManager.removeSessionManagerListener(
             sessionListener, CastSession::class.java
         )
+        remoteMediaClient?.unregisterCallback(mediaCallback)
+        remoteMediaClient = null
         super.onPause()
+    }
+
+    private fun attachClient(session: CastSession?) {
+        remoteMediaClient?.unregisterCallback(mediaCallback)
+        remoteMediaClient = if (session?.isConnected == true) session.remoteMediaClient else null
+        remoteMediaClient?.registerCallback(mediaCallback)
+        updateMiniBar()
+    }
+
+    private fun updateMiniBar() {
+        val client = remoteMediaClient
+        val hasMedia = client != null && client.hasMediaSession()
+        miniBar.visibility = if (hasMedia) View.VISIBLE else View.GONE
+        if (hasMedia && client != null) {
+            miniTitle.text = client.mediaInfo?.metadata?.getString(MediaMetadata.KEY_TITLE)
+                ?: getString(R.string.default_title)
+            miniTitle.isSelected = true
+            miniDevice.text = castContext.sessionManager.currentCastSession
+                ?.castDevice?.friendlyName ?: ""
+            miniPlayPause.setIconResource(
+                if (client.isPlaying) R.drawable.ic_pause else R.drawable.ic_play
+            )
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

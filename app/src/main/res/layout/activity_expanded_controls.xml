@@ -119,7 +119,7 @@
                     android:layout_width="64dp"
                     android:layout_height="64dp"
                     android:contentDescription="@string/rewind"
-                    app:icon="@drawable/ic_rewind"
+                    app:icon="@drawable/ic_replay_10"
                     app:iconGravity="textStart"
                     app:iconPadding="0dp"
                     app:iconSize="28dp" />
@@ -143,7 +143,7 @@
                     android:layout_width="64dp"
                     android:layout_height="64dp"
                     android:contentDescription="@string/forward"
-                    app:icon="@drawable/ic_forward"
+                    app:icon="@drawable/ic_forward_30"
                     app:iconGravity="textStart"
                     app:iconPadding="0dp"
                     app:iconSize="28dp" />
