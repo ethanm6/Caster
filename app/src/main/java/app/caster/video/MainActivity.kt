@@ -41,7 +41,6 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var castContext: CastContext
     private lateinit var statusText: TextView
-    private lateinit var titleText: TextView
     private lateinit var chooseButton: Button
     private lateinit var urlInputLayout: TextInputLayout
     private lateinit var urlInput: TextInputEditText
@@ -118,7 +117,6 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(findViewById<Toolbar>(R.id.toolbar))
 
         statusText = findViewById(R.id.status_text)
-        titleText = findViewById(R.id.title_text)
         chooseButton = findViewById(R.id.choose_button)
         chooseButton.setOnClickListener {
             pickVideo.launch(arrayOf("video/*"))
@@ -243,7 +241,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        showTitle()
         maybeCastNow()
     }
 
@@ -264,13 +261,7 @@ class MainActivity : AppCompatActivity() {
         castUrl = url
         castMimeType = guessMimeType(url)
         localFileServed = false
-        showTitle()
         maybeCastNow()
-    }
-
-    private fun showTitle() {
-        titleText.text = videoTitle
-        titleText.visibility = View.VISIBLE
     }
 
     /** The first http(s) URL in shared text — browsers share links as text/plain. */
@@ -297,7 +288,6 @@ class MainActivity : AppCompatActivity() {
             ?: queryDisplayName(uri)
             ?: uri.lastPathSegment
             ?: getString(R.string.default_title)
-        showTitle()
     }
 
     /** The file name of a content:// or file:// URI, e.g. "Movie.mkv". */
