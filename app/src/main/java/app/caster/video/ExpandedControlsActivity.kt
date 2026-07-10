@@ -144,8 +144,12 @@ class ExpandedControlsActivity : AppCompatActivity() {
         playPauseButton.setIconResource(
             if (client.isPlaying) R.drawable.ic_pause else R.drawable.ic_play
         )
-        videoTitle.text = client.mediaInfo?.metadata?.getString(MediaMetadata.KEY_TITLE) ?: ""
-        videoTitle.isSelected = true // enable marquee
+        val title = client.mediaInfo?.metadata?.getString(MediaMetadata.KEY_TITLE) ?: ""
+        // Re-assigning the same text restarts the marquee scroll.
+        if (videoTitle.text?.toString() != title) {
+            videoTitle.text = title
+            videoTitle.isSelected = true // enable marquee
+        }
 
         val session = castContext.sessionManager.currentCastSession
         muteButton.isChecked = session?.isMute == true
