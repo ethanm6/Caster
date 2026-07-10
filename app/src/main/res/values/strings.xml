@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Caster</string>
+    <string name="cast_button">Cast</string>
+    <string name="choose_video">Choose video</string>
+    <string name="default_title">Video</string>
+    <string name="landing_hint">Open a video from another app (like Stremio) and pick Caster as the external player, or choose a local video below.</string>
+    <string name="status_idle">Not connected</string>
+    <string name="status_pick_device">Tap the Cast button and pick a Chromecast to start playback</string>
+    <string name="status_connected">Casting to %1$s</string>
+    <string name="status_connect_failed">Could not connect to the Chromecast</string>
+    <string name="status_load_failed">Failed to load media (error %1$d)</string>
+    <string name="unsupported_uri">Unsupported link type</string>
+    <string name="no_network">No Wi-Fi network — cannot serve local files to the Chromecast</string>
+    <string name="server_channel_name">Local streaming server</string>
+    <string name="server_notification_title">Serving video to Chromecast</string>
+    <string name="server_notification_text">Streaming a local file over Wi-Fi</string>
+    <string name="server_notification_stop">Stop</string>
+</resources>

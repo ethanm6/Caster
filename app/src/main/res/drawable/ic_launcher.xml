@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#3F51B5"
+        android:pathData="M0,0h108v108h-108z" />
+    <!-- Cast icon: screen with radiating arcs -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,30h60c2.2,0 4,1.8 4,4v40c0,2.2 -1.8,4 -4,4H56v-6h26V36H26v8h-6v-10c0,-2.2 1.8,-4 4,-4z" />
+    <path
+        android:fillColor="#FF5722"
+        android:pathData="M20,72c3.3,0 6,2.7 6,6h-6zM20,62c8.8,0 16,7.2 16,16h-6c0,-5.5 -4.5,-10 -10,-10zM20,52c14.4,0 26,11.6 26,26h-6c0,-11 -9,-20 -20,-20z" />
+</vector>
