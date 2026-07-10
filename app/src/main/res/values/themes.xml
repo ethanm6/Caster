@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <style name="Theme.Caster" parent="Theme.MaterialComponents.DayNight.NoActionBar">
-        <item name="colorPrimary">#3F51B5</item>
-        <item name="colorPrimaryVariant">#303F9F</item>
-        <item name="colorOnPrimary">#FFFFFF</item>
-        <item name="colorSecondary">#FF5722</item>
-        <item name="colorOnSecondary">#FFFFFF</item>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Theme.Caster" parent="Theme.Material3Expressive.DayNight.NoActionBar">
+        <!-- Keep system-bar insets applied by the framework (Android 15 forces
+             edge-to-edge otherwise, putting the toolbar under the status bar). -->
+        <item name="android:windowOptOutEdgeToEdgeEnforcement" tools:targetApi="35">true</item>
+        <item name="android:statusBarColor">?attr/colorSurface</item>
+        <item name="android:windowLightStatusBar" tools:targetApi="23">?attr/isLightTheme</item>
     </style>
 </resources>
