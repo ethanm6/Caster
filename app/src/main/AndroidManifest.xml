@@ -51,11 +51,12 @@
                 <data android:mimeType="video/*" />
             </intent-filter>
 
-            <!-- Share sheet -->
+            <!-- Share sheet: video files, and links shared as text from browsers -->
             <intent-filter>
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="video/*" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
 

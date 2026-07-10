@@ -168,9 +168,13 @@ class MainActivity : AppCompatActivity() {
         val hasMedia = client != null && client.hasMediaSession()
         miniBar.visibility = if (hasMedia) View.VISIBLE else View.GONE
         if (hasMedia && client != null) {
-            miniTitle.text = client.mediaInfo?.metadata?.getString(MediaMetadata.KEY_TITLE)
+            val title = client.mediaInfo?.metadata?.getString(MediaMetadata.KEY_TITLE)
                 ?: getString(R.string.default_title)
-            miniTitle.isSelected = true
+            // Re-assigning the same text restarts the marquee scroll.
+            if (miniTitle.text?.toString() != title) {
+                miniTitle.text = title
+                miniTitle.isSelected = true
+            }
             miniDevice.text = castContext.sessionManager.currentCastSession
                 ?.castDevice?.friendlyName ?: ""
             miniPlayPause.setIconResource(
@@ -191,6 +195,7 @@ class MainActivity : AppCompatActivity() {
             Intent.ACTION_SEND ->
                 @Suppress("DEPRECATION")
                 intent.getParcelableExtra(Intent.EXTRA_STREAM)
+                    ?: sharedLinkUri(intent)
             else -> null
         }
 
@@ -201,6 +206,7 @@ class MainActivity : AppCompatActivity() {
 
         val explicitTitle = intent.getStringExtra("title")
             ?: intent.getStringExtra(Intent.EXTRA_TITLE)
+            ?: intent.getStringExtra(Intent.EXTRA_SUBJECT) // browsers put the page title here
 
         when (uri.scheme) {
             "http", "https" -> {
@@ -209,7 +215,9 @@ class MainActivity : AppCompatActivity() {
                     ?: getString(R.string.default_title)
                 // Cast the URL exactly as received from the sending app.
                 castUrl = uri.toString()
-                castMimeType = intent.type?.takeIf { it != "*/*" }
+                // A shared link's intent type describes the share (text/plain),
+                // not the video — never send it to the receiver as contentType.
+                castMimeType = intent.type?.takeIf { it != "*/*" && !it.startsWith("text/") }
                     ?: guessMimeType(uri.toString())
                 localFileServed = false
             }
@@ -222,6 +230,13 @@ class MainActivity : AppCompatActivity() {
 
         titleText.text = videoTitle
         maybeCastNow()
+    }
+
+    /** The first http(s) URL in shared text — browsers share links as text/plain. */
+    private fun sharedLinkUri(intent: Intent): Uri? {
+        val text = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return null
+        val url = Regex("""https?://\S+""").find(text)?.value ?: return null
+        return Uri.parse(url)
     }
 
     private fun prepareLocalFile(uri: Uri, intentType: String?, explicitTitle: String? = null) {
