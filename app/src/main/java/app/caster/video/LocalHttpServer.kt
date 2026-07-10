@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 import fi.iki.elonen.NanoHTTPD
 import java.io.InputStream
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Serves a single content:// or file:// video URI over HTTP so the
@@ -71,7 +72,21 @@ class LocalHttpServer(
         }
     }
 
-    private fun openStream(): InputStream? = context.contentResolver.openInputStream(videoUri)
+    private fun openStream(): InputStream? =
+        context.contentResolver.openInputStream(videoUri)?.let { CountingStream(it) }
+
+    /** Adds everything the Chromecast actually reads to [bytesServed]; skips don't count. */
+    private class CountingStream(private val delegate: InputStream) : InputStream() {
+        override fun read(): Int =
+            delegate.read().also { if (it >= 0) bytesServed.incrementAndGet() }
+
+        override fun read(b: ByteArray, off: Int, len: Int): Int =
+            delegate.read(b, off, len).also { if (it > 0) bytesServed.addAndGet(it.toLong()) }
+
+        override fun skip(n: Long): Long = delegate.skip(n)
+        override fun available(): Int = delegate.available()
+        override fun close() = delegate.close()
+    }
 
     private fun queryLength(): Long = try {
         context.contentResolver.openAssetFileDescriptor(videoUri, "r")?.use { it.length } ?: -1L
@@ -93,5 +108,8 @@ class LocalHttpServer(
 
     companion object {
         const val PORT = 8642
+
+        /** Total bytes served to the Chromecast, ever-increasing; readers take deltas. */
+        val bytesServed = AtomicLong()
     }
 }

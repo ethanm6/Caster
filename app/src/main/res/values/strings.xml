@@ -4,7 +4,9 @@
     <string name="cast_button">Cast</string>
     <string name="choose_video">Choose video</string>
     <string name="default_title">Video</string>
-    <string name="landing_hint">Open a video from another app (like Stremio) and pick Caster as the external player, or choose a local video below.</string>
+    <string name="url_hint">Paste a video link</string>
+    <string name="cast_link">Cast this link</string>
+    <string name="invalid_url">Not a valid video link</string>
     <string name="status_idle">Not connected</string>
     <string name="status_pick_device">Tap the Cast button and pick a Chromecast to start playback</string>
     <string name="status_connected">Casting to %1$s</string>

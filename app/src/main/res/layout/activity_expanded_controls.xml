@@ -54,6 +54,17 @@
         android:textAppearance="?attr/textAppearanceBodyLarge"
         android:textColor="?attr/colorOnSurfaceVariant" />
 
+    <!-- Phone-to-Chromecast transfer rate; only shown when serving a local file -->
+    <TextView
+        android:id="@+id/transfer_speed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        tools:text="↑ 2.4 MB/s" />
+
     <Space
         android:layout_width="match_parent"
         android:layout_height="0dp"

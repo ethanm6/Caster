@@ -1,6 +1,10 @@
 package app.caster.video
 
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
+import android.view.View
 import android.widget.SeekBar
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
@@ -28,6 +32,7 @@ class ExpandedControlsActivity : AppCompatActivity() {
 
     private lateinit var deviceName: TextView
     private lateinit var videoTitle: TextView
+    private lateinit var transferSpeed: TextView
     private lateinit var positionText: TextView
     private lateinit var durationText: TextView
     private lateinit var seekBar: SeekBar
@@ -40,6 +45,16 @@ class ExpandedControlsActivity : AppCompatActivity() {
             seekBar.progress = progress.toInt()
             positionText.text = formatTime(progress)
             durationText.text = formatTime(duration)
+        }
+    }
+
+    private val speedHandler = Handler(Looper.getMainLooper())
+    private var lastBytesServed = 0L
+    private var lastSpeedTime = 0L
+    private val speedTicker = object : Runnable {
+        override fun run() {
+            updateTransferSpeed()
+            speedHandler.postDelayed(this, 1000)
         }
     }
 
@@ -68,6 +83,7 @@ class ExpandedControlsActivity : AppCompatActivity() {
 
         deviceName = findViewById(R.id.device_name)
         videoTitle = findViewById(R.id.video_title)
+        transferSpeed = findViewById(R.id.transfer_speed)
         positionText = findViewById(R.id.position_text)
         durationText = findViewById(R.id.duration_text)
         seekBar = findViewById(R.id.seek_bar)
@@ -116,10 +132,14 @@ class ExpandedControlsActivity : AppCompatActivity() {
             finish()
         } else {
             attachTo(session)
+            lastBytesServed = LocalHttpServer.bytesServed.get()
+            lastSpeedTime = SystemClock.elapsedRealtime()
+            speedHandler.post(speedTicker)
         }
     }
 
     override fun onPause() {
+        speedHandler.removeCallbacks(speedTicker)
         castContext.sessionManager.removeSessionManagerListener(
             sessionListener, CastSession::class.java
         )
@@ -153,6 +173,40 @@ class ExpandedControlsActivity : AppCompatActivity() {
 
         val session = castContext.sessionManager.currentCastSession
         muteButton.isChecked = session?.isMute == true
+    }
+
+    /**
+     * Rate at which the Chromecast is pulling from our local file server. Only
+     * meaningful for local files — remote URLs are fetched by the receiver
+     * directly, so the phone never sees that traffic and the meter stays hidden.
+     */
+    private fun updateTransferSpeed() {
+        val contentId = remoteMediaClient?.mediaInfo?.contentId
+        if (contentId == null || !contentId.contains(":${LocalHttpServer.PORT}/video/")) {
+            transferSpeed.visibility = View.GONE
+            lastBytesServed = LocalHttpServer.bytesServed.get()
+            lastSpeedTime = SystemClock.elapsedRealtime()
+            return
+        }
+        val now = SystemClock.elapsedRealtime()
+        val bytes = LocalHttpServer.bytesServed.get()
+        val elapsedMs = now - lastSpeedTime
+        if (elapsedMs > 0) {
+            val bytesPerSecond = (bytes - lastBytesServed) * 1000.0 / elapsedMs
+            transferSpeed.text = formatSpeed(bytesPerSecond)
+            transferSpeed.visibility = View.VISIBLE
+        }
+        lastBytesServed = bytes
+        lastSpeedTime = now
+    }
+
+    private fun formatSpeed(bytesPerSecond: Double): String = when {
+        bytesPerSecond >= 1_000_000 ->
+            String.format(Locale.US, "↑ %.1f MB/s", bytesPerSecond / 1_000_000)
+        bytesPerSecond >= 1_000 ->
+            String.format(Locale.US, "↑ %.0f kB/s", bytesPerSecond / 1_000)
+        else ->
+            String.format(Locale.US, "↑ %.0f B/s", bytesPerSecond)
     }
 
     private fun seekBy(deltaMs: Long) {

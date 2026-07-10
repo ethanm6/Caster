@@ -32,7 +32,7 @@
             android:gravity="center"
             android:textAppearance="?attr/textAppearanceHeadlineSmall"
             android:textColor="?attr/colorOnSurface"
-            android:text="@string/landing_hint" />
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/status_text"
@@ -44,12 +44,32 @@
             android:textColor="?attr/colorOnSurfaceVariant"
             android:text="@string/status_idle" />
 
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/url_input_layout"
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:hint="@string/url_hint"
+            app:endIconContentDescription="@string/cast_link"
+            app:endIconDrawable="@drawable/ic_play"
+            app:endIconMode="custom">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/url_input"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:imeOptions="actionGo"
+                android:inputType="textUri"
+                android:singleLine="true" />
+        </com.google.android.material.textfield.TextInputLayout>
+
         <Button
             android:id="@+id/choose_button"
             style="@style/Widget.Material3.Button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="32dp"
+            android:layout_marginTop="16dp"
             android:text="@string/choose_video" />
     </LinearLayout>
 

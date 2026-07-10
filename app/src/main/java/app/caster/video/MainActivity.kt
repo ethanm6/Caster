@@ -7,6 +7,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
+import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputMethodManager
 import android.webkit.MimeTypeMap
 import android.widget.Button
 import android.widget.TextView
@@ -25,8 +27,11 @@ import com.google.android.gms.cast.framework.CastContext
 import com.google.android.gms.cast.framework.CastSession
 import com.google.android.gms.cast.framework.SessionManagerListener
 import com.google.android.gms.cast.framework.media.RemoteMediaClient
+import androidx.core.widget.doAfterTextChanged
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 
 class MainActivity : AppCompatActivity() {
 
@@ -38,6 +43,8 @@ class MainActivity : AppCompatActivity() {
     private lateinit var statusText: TextView
     private lateinit var titleText: TextView
     private lateinit var chooseButton: Button
+    private lateinit var urlInputLayout: TextInputLayout
+    private lateinit var urlInput: TextInputEditText
     private lateinit var miniBar: MaterialCardView
     private lateinit var miniTitle: TextView
     private lateinit var miniDevice: TextView
@@ -116,6 +123,17 @@ class MainActivity : AppCompatActivity() {
         chooseButton.setOnClickListener {
             pickVideo.launch(arrayOf("video/*"))
         }
+
+        urlInputLayout = findViewById(R.id.url_input_layout)
+        urlInput = findViewById(R.id.url_input)
+        urlInputLayout.setEndIconOnClickListener { castPastedUrl() }
+        urlInput.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_GO) {
+                castPastedUrl()
+                true
+            } else false
+        }
+        urlInput.doAfterTextChanged { urlInputLayout.error = null }
 
         miniBar = findViewById(R.id.mini_bar)
         miniTitle = findViewById(R.id.mini_title)
@@ -199,10 +217,7 @@ class MainActivity : AppCompatActivity() {
             else -> null
         }
 
-        if (uri == null) {
-            titleText.text = getString(R.string.landing_hint)
-            return
-        }
+        if (uri == null) return
 
         val explicitTitle = intent.getStringExtra("title")
             ?: intent.getStringExtra(Intent.EXTRA_TITLE)
@@ -228,8 +243,34 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        titleText.text = videoTitle
+        showTitle()
         maybeCastNow()
+    }
+
+    /** Casts whatever http(s) URL is in the paste box, exactly as typed. */
+    private fun castPastedUrl() {
+        val text = urlInput.text?.toString().orEmpty()
+        val url = Regex("""https?://\S+""").find(text)?.value
+        if (url == null) {
+            urlInputLayout.error = getString(R.string.invalid_url)
+            return
+        }
+        getSystemService(InputMethodManager::class.java)
+            .hideSoftInputFromWindow(urlInput.windowToken, 0)
+        urlInput.clearFocus()
+
+        val uri = Uri.parse(url)
+        videoTitle = uri.lastPathSegment ?: getString(R.string.default_title)
+        castUrl = url
+        castMimeType = guessMimeType(url)
+        localFileServed = false
+        showTitle()
+        maybeCastNow()
+    }
+
+    private fun showTitle() {
+        titleText.text = videoTitle
+        titleText.visibility = View.VISIBLE
     }
 
     /** The first http(s) URL in shared text — browsers share links as text/plain. */
@@ -256,7 +297,7 @@ class MainActivity : AppCompatActivity() {
             ?: queryDisplayName(uri)
             ?: uri.lastPathSegment
             ?: getString(R.string.default_title)
-        titleText.text = videoTitle
+        showTitle()
     }
 
     /** The file name of a content:// or file:// URI, e.g. "Movie.mkv". */
