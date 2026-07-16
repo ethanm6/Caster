@@ -22,3 +22,15 @@ Requires an Android SDK (compileSdk 35) — set `sdk.dir` in `local.properties`.
 1. Make sure the phone and Chromecast are on the same Wi-Fi network.
 2. Open a video in Stremio (or any app) and choose Caster as the external player.
 3. Tap the Cast button, pick your Chromecast, and playback starts with full remote controls (notification, lock screen, and expanded controller).
+
+For casting videos straight from web pages, see the companion Firefox extension: [caster-extension](https://github.com/ethanm6/caster-extension).
+
+## Support
+
+If you find this project useful, you can support development:
+
+[![Support me on Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/ethanm6)
+
+## License
+
+[GPL-3.0-or-later](LICENSE)
