@@ -15,7 +15,6 @@ import com.google.android.gms.cast.MediaSeekOptions
 import com.google.android.gms.cast.framework.CastButtonFactory
 import com.google.android.gms.cast.framework.CastContext
 import com.google.android.gms.cast.framework.CastSession
-import com.google.android.gms.cast.framework.SessionManagerListener
 import com.google.android.gms.cast.framework.media.RemoteMediaClient
 import com.google.android.material.button.MaterialButton
 import java.util.Locale
@@ -64,16 +63,11 @@ class ExpandedControlsActivity : AppCompatActivity() {
         override fun onMetadataUpdated() = updateUi()
     }
 
-    private val sessionListener = object : SessionManagerListener<CastSession> {
+    private val sessionListener = object : CastSessionAdapter() {
         override fun onSessionStarted(session: CastSession, sessionId: String) = attachTo(session)
         override fun onSessionResumed(session: CastSession, wasSuspended: Boolean) = attachTo(session)
         override fun onSessionEnded(session: CastSession, error: Int) = finish()
         override fun onSessionStartFailed(session: CastSession, error: Int) = finish()
-        override fun onSessionStarting(session: CastSession) {}
-        override fun onSessionEnding(session: CastSession) {}
-        override fun onSessionResuming(session: CastSession, sessionId: String) {}
-        override fun onSessionResumeFailed(session: CastSession, error: Int) {}
-        override fun onSessionSuspended(session: CastSession, reason: Int) {}
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

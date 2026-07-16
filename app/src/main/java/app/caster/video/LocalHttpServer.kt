@@ -3,7 +3,9 @@ package app.caster.video
 
 import android.content.Context
 import android.net.Uri
+import android.os.ParcelFileDescriptor
 import fi.iki.elonen.NanoHTTPD
+import java.io.IOException
 import java.io.InputStream
 import java.util.concurrent.atomic.AtomicLong
 
@@ -20,12 +22,15 @@ class LocalHttpServer(
     port: Int
 ) : NanoHTTPD("0.0.0.0", port) {
 
+    // The URI never changes for a server instance; the Chromecast issues many
+    // range requests, so don't reopen a descriptor per request just for this.
+    private val totalLength: Long by lazy { queryLength() }
+
     override fun serve(session: IHTTPSession): Response {
         if (session.uri != "/video/$pathToken") {
             return newFixedLengthResponse(Response.Status.NOT_FOUND, MIME_PLAINTEXT, "Not found")
         }
 
-        val totalLength = queryLength()
         if (totalLength < 0) {
             return newFixedLengthResponse(
                 Response.Status.INTERNAL_ERROR, MIME_PLAINTEXT, "Cannot determine file size"
@@ -37,7 +42,7 @@ class LocalHttpServer(
             if (rangeHeader != null && rangeHeader.startsWith("bytes=")) {
                 serveRange(rangeHeader, totalLength)
             } else {
-                val stream = openStream() ?: return notFound()
+                val stream = openStreamAt(0) ?: return notFound()
                 newFixedLengthResponse(Response.Status.OK, mimeType, stream, totalLength).apply {
                     addHeader("Accept-Ranges", "bytes")
                 }
@@ -62,8 +67,7 @@ class LocalHttpServer(
         val clampedEnd = minOf(end, totalLength - 1)
         val contentLength = clampedEnd - start + 1
 
-        val stream = openStream() ?: return notFound()
-        skipFully(stream, start)
+        val stream = openStreamAt(start) ?: return notFound()
 
         return newFixedLengthResponse(
             Response.Status.PARTIAL_CONTENT, mimeType, stream, contentLength
@@ -73,8 +77,31 @@ class LocalHttpServer(
         }
     }
 
-    private fun openStream(): InputStream? =
-        context.contentResolver.openInputStream(videoUri)?.let { CountingStream(it) }
+    /**
+     * Opens the video positioned at [offset]. Seeks via the file channel when
+     * the provider hands out a real file descriptor; pipe-backed streams fall
+     * back to skip(), which reads and discards everything up to the offset.
+     */
+    private fun openStreamAt(offset: Long): InputStream? {
+        if (offset > 0) {
+            try {
+                context.contentResolver.openFileDescriptor(videoUri, "r")?.let { pfd ->
+                    val stream = ParcelFileDescriptor.AutoCloseInputStream(pfd)
+                    try {
+                        stream.channel.position(offset)
+                        return CountingStream(stream)
+                    } catch (e: IOException) {
+                        stream.close() // not seekable after all
+                    }
+                }
+            } catch (e: Exception) {
+                // Provider won't open as a plain fd; use the skipping path.
+            }
+        }
+        val stream = context.contentResolver.openInputStream(videoUri) ?: return null
+        skipFully(stream, offset)
+        return CountingStream(stream)
+    }
 
     /** Adds everything the Chromecast actually reads to [bytesServed]; skips don't count. */
     private class CountingStream(private val delegate: InputStream) : InputStream() {

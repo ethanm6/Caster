@@ -5,7 +5,6 @@ import android.app.Application
 import com.google.android.gms.cast.MediaStatus
 import com.google.android.gms.cast.framework.CastContext
 import com.google.android.gms.cast.framework.CastSession
-import com.google.android.gms.cast.framework.SessionManagerListener
 import com.google.android.gms.cast.framework.media.RemoteMediaClient
 import com.google.android.material.color.DynamicColors
 
@@ -44,25 +43,25 @@ class CasterApp : Application() {
             }
         }
 
-        sessionManager.addSessionManagerListener(object : SessionManagerListener<CastSession> {
+        // Unregister first: a start followed by a resume on the same session
+        // must not stack a second registration of the same callback.
+        fun watch(session: CastSession) = session.remoteMediaClient?.run {
+            unregisterCallback(mediaCallback)
+            registerCallback(mediaCallback)
+        }
+
+        sessionManager.addSessionManagerListener(object : CastSessionAdapter() {
             override fun onSessionStarted(session: CastSession, sessionId: String) {
-                session.remoteMediaClient?.registerCallback(mediaCallback)
+                watch(session)
             }
 
             override fun onSessionResumed(session: CastSession, wasSuspended: Boolean) {
-                session.remoteMediaClient?.registerCallback(mediaCallback)
+                watch(session)
             }
 
             override fun onSessionEnded(session: CastSession, error: Int) {
                 LocalHttpServerService.stop(this@CasterApp)
             }
-
-            override fun onSessionStarting(session: CastSession) {}
-            override fun onSessionStartFailed(session: CastSession, error: Int) {}
-            override fun onSessionEnding(session: CastSession) {}
-            override fun onSessionResuming(session: CastSession, sessionId: String) {}
-            override fun onSessionResumeFailed(session: CastSession, error: Int) {}
-            override fun onSessionSuspended(session: CastSession, reason: Int) {}
         }, CastSession::class.java)
     }
 }

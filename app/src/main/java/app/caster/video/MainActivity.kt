@@ -26,7 +26,6 @@ import android.view.View
 import com.google.android.gms.cast.framework.CastButtonFactory
 import com.google.android.gms.cast.framework.CastContext
 import com.google.android.gms.cast.framework.CastSession
-import com.google.android.gms.cast.framework.SessionManagerListener
 import com.google.android.gms.cast.framework.media.RemoteMediaClient
 import androidx.core.widget.doAfterTextChanged
 import com.google.android.material.button.MaterialButton
@@ -38,6 +37,7 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val CAST_DIALOG_TAG = "cast_chooser_dialog"
+        private val URL_REGEX = Regex("""https?://\S+""")
     }
 
     private lateinit var castContext: CastContext
@@ -63,7 +63,7 @@ class MainActivity : AppCompatActivity() {
     private var pendingLoad = false
     private var localFileServed = false
 
-    private val sessionListener = object : SessionManagerListener<CastSession> {
+    private val sessionListener = object : CastSessionAdapter() {
         override fun onSessionStarted(session: CastSession, sessionId: String) {
             attachClient(session)
             if (pendingLoad) loadMedia(session)
@@ -85,15 +85,9 @@ class MainActivity : AppCompatActivity() {
             updateStatus()
         }
 
-        override fun onSessionStarting(session: CastSession) {}
         override fun onSessionStartFailed(session: CastSession, error: Int) {
             statusText.text = getString(R.string.status_connect_failed)
         }
-
-        override fun onSessionEnding(session: CastSession) {}
-        override fun onSessionResuming(session: CastSession, sessionId: String) {}
-        override fun onSessionResumeFailed(session: CastSession, error: Int) {}
-        override fun onSessionSuspended(session: CastSession, reason: Int) {}
     }
 
     private val pickVideo = registerForActivityResult(
@@ -181,23 +175,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateMiniBar() {
-        val client = remoteMediaClient
-        val hasMedia = client != null && client.hasMediaSession()
-        miniBar.visibility = if (hasMedia) View.VISIBLE else View.GONE
-        if (hasMedia && client != null) {
-            val title = client.mediaInfo?.metadata?.getString(MediaMetadata.KEY_TITLE)
-                ?: getString(R.string.default_title)
-            // Re-assigning the same text restarts the marquee scroll.
-            if (miniTitle.text?.toString() != title) {
-                miniTitle.text = title
-                miniTitle.isSelected = true
-            }
-            miniDevice.text = castContext.sessionManager.currentCastSession
-                ?.castDevice?.friendlyName ?: ""
-            miniPlayPause.setIconResource(
-                if (client.isPlaying) R.drawable.ic_pause else R.drawable.ic_play
-            )
+        val client = remoteMediaClient?.takeIf { it.hasMediaSession() }
+        miniBar.visibility = if (client != null) View.VISIBLE else View.GONE
+        if (client == null) return
+        val title = client.mediaInfo?.metadata?.getString(MediaMetadata.KEY_TITLE)
+            ?: getString(R.string.default_title)
+        // Re-assigning the same text restarts the marquee scroll.
+        if (miniTitle.text?.toString() != title) {
+            miniTitle.text = title
+            miniTitle.isSelected = true
         }
+        miniDevice.text = castContext.sessionManager.currentCastSession
+            ?.castDevice?.friendlyName ?: ""
+        miniPlayPause.setIconResource(
+            if (client.isPlaying) R.drawable.ic_pause else R.drawable.ic_play
+        )
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -247,8 +239,7 @@ class MainActivity : AppCompatActivity() {
 
     /** Casts whatever http(s) URL is in the paste box, exactly as typed. */
     private fun castPastedUrl() {
-        val text = urlInput.text?.toString().orEmpty()
-        val url = Regex("""https?://\S+""").find(text)?.value
+        val url = firstHttpUrl(urlInput.text?.toString())
         if (url == null) {
             urlInputLayout.error = getString(R.string.invalid_url)
             return
@@ -266,11 +257,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** The first http(s) URL in shared text — browsers share links as text/plain. */
-    private fun sharedLinkUri(intent: Intent): Uri? {
-        val text = intent.getStringExtra(Intent.EXTRA_TEXT) ?: return null
-        val url = Regex("""https?://\S+""").find(text)?.value ?: return null
-        return Uri.parse(url)
-    }
+    private fun sharedLinkUri(intent: Intent): Uri? =
+        firstHttpUrl(intent.getStringExtra(Intent.EXTRA_TEXT))?.let(Uri::parse)
+
+    /** The first http(s) URL in [text] — pasted or shared text may wrap the link in prose. */
+    private fun firstHttpUrl(text: String?): String? =
+        text?.let { URL_REGEX.find(it)?.value }
 
     private fun prepareLocalFile(uri: Uri, intentType: String?, explicitTitle: String? = null) {
         val mime = intentType?.takeIf { it != "*/*" }
