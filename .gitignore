@@ -2,6 +2,8 @@
 build/
 local.properties
 keystore.properties
+*.keystore
+/*.apk
 .idea/
 *.iml
 .DS_Store
