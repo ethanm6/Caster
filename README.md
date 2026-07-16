@@ -39,4 +39,11 @@ If you find this project useful, you can support development:
 
 ## License
 
-[GPL-3.0-or-later](LICENSE)
+[GPL-3.0-or-later](LICENSE). Licenses of the bundled third-party libraries
+are collected in [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md).
+
+**Cast SDK linking exception** — additional permission under GNU GPL version 3
+section 7: if you modify this program or any covered work by linking or
+combining it with the Google Cast SDK (`play-services-cast-framework`) or a
+modified version of it, the copyright holder of Caster grants you permission
+to convey the resulting work.
