@@ -2,6 +2,12 @@
 
 A minimal Android app that casts videos to a Chromecast on your local network.
 
+## Download
+
+[<img src="https://raw.githubusercontent.com/ImranR98/Obtainium/main/assets/graphics/badge_obtainium.png" alt="Get it on Obtainium" height="54">](https://apps.obtainium.imranr.dev/redirect?r=obtainium://add/https://github.com/ethanm6/Caster)
+
+Or grab the APK directly from the [latest release](https://github.com/ethanm6/Caster/releases/latest).
+
 ## What it does
 
 - Registers as an **external video player**: in apps like Stremio, pick "Play in external player" and choose Caster. Browsers and file managers can hand off videos the same way.
