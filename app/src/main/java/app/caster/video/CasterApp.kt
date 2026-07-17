@@ -7,6 +7,7 @@ import com.google.android.gms.cast.framework.CastContext
 import com.google.android.gms.cast.framework.CastSession
 import com.google.android.gms.cast.framework.media.RemoteMediaClient
 import com.google.android.material.color.DynamicColors
+import java.util.concurrent.Executors
 
 class CasterApp : Application() {
 
@@ -14,7 +15,15 @@ class CasterApp : Application() {
         super.onCreate()
         // Material You: derive the app palette from the user's wallpaper (Android 12+).
         DynamicColors.applyToActivitiesIfAvailable(this)
-        initCastWatchdog()
+
+        // Load the Cast framework off the main thread so startup isn't blocked
+        // on Play Services; the watchdog attaches once it's ready.
+        val executor = Executors.newSingleThreadExecutor()
+        CastContext.getSharedInstance(this, executor).addOnCompleteListener { task ->
+            executor.shutdown()
+            // Failure = Google Play Services unavailable; casting won't work anyway.
+            if (task.isSuccessful) initCastWatchdog(task.result)
+        }
     }
 
     /**
@@ -22,12 +31,7 @@ class CasterApp : Application() {
      * Chromecast side (stopped from the TV, another sender, or an error),
      * and stops the local file server once any session ends.
      */
-    private fun initCastWatchdog() {
-        val castContext = try {
-            CastContext.getSharedInstance(this)
-        } catch (e: Exception) {
-            return // Google Play Services unavailable; casting won't work anyway.
-        }
+    private fun initCastWatchdog(castContext: CastContext) {
         val sessionManager = castContext.sessionManager
 
         val mediaCallback = object : RemoteMediaClient.Callback() {

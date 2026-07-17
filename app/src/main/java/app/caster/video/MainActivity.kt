@@ -93,13 +93,7 @@ class MainActivity : AppCompatActivity() {
     private val pickVideo = registerForActivityResult(
         ActivityResultContracts.OpenDocument()
     ) { uri: Uri? ->
-        if (uri != null) {
-            contentResolver.takePersistableUriPermission(
-                uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
-            )
-            prepareLocalFile(uri, contentResolver.getType(uri))
-            maybeCastNow()
-        }
+        if (uri != null) prepareLocalFile(uri, null, persistAccess = true)
     }
 
     private val requestNotifications = registerForActivityResult(
@@ -226,15 +220,12 @@ class MainActivity : AppCompatActivity() {
                 castMimeType = intent.type?.takeIf { it != "*/*" && !it.startsWith("text/") }
                     ?: guessMimeType(uri.toString())
                 localFileServed = false
+                maybeCastNow()
             }
+            // Casts on its own once the background resolve completes.
             "content", "file" -> prepareLocalFile(uri, intent.type, explicitTitle)
-            else -> {
-                Toast.makeText(this, R.string.unsupported_uri, Toast.LENGTH_LONG).show()
-                return
-            }
+            else -> Toast.makeText(this, R.string.unsupported_uri, Toast.LENGTH_LONG).show()
         }
-
-        maybeCastNow()
     }
 
     /** Casts whatever http(s) URL is in the paste box, exactly as typed. */
@@ -264,23 +255,49 @@ class MainActivity : AppCompatActivity() {
     private fun firstHttpUrl(text: String?): String? =
         text?.let { URL_REGEX.find(it)?.value }
 
-    private fun prepareLocalFile(uri: Uri, intentType: String?, explicitTitle: String? = null) {
-        val mime = intentType?.takeIf { it != "*/*" }
-            ?: contentResolver.getType(uri)
-            ?: guessMimeType(uri.toString())
+    /**
+     * Resolves the file's mime type and display name — content-provider round
+     * trips that can stall on cloud-backed providers, so they run off the main
+     * thread — then starts the local server and casts.
+     */
+    private fun prepareLocalFile(
+        uri: Uri,
+        intentType: String?,
+        explicitTitle: String? = null,
+        persistAccess: Boolean = false
+    ) {
         val ip = NetworkUtils.getLocalIpAddress(this)
         if (ip == null) {
             Toast.makeText(this, R.string.no_network, Toast.LENGTH_LONG).show()
             return
         }
-        val token = LocalHttpServerService.start(this, uri, mime)
-        castUrl = "http://$ip:${LocalHttpServer.PORT}/video/$token"
-        castMimeType = mime
-        localFileServed = true
-        videoTitle = explicitTitle
-            ?: queryDisplayName(uri)
-            ?: uri.lastPathSegment
-            ?: getString(R.string.default_title)
+        Thread {
+            if (persistAccess) {
+                try {
+                    contentResolver.takePersistableUriPermission(
+                        uri, Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    )
+                } catch (e: SecurityException) {
+                    // Access still lasts until the process dies; casting proceeds.
+                }
+            }
+            val mime = intentType?.takeIf { it != "*/*" }
+                ?: contentResolver.getType(uri)
+                ?: guessMimeType(uri.toString())
+            val title = explicitTitle
+                ?: queryDisplayName(uri)
+                ?: uri.lastPathSegment
+                ?: getString(R.string.default_title)
+            runOnUiThread {
+                if (isFinishing || isDestroyed) return@runOnUiThread
+                val token = LocalHttpServerService.start(this, uri, mime)
+                castUrl = "http://$ip:${LocalHttpServer.PORT}/video/$token"
+                castMimeType = mime
+                localFileServed = true
+                videoTitle = title
+                maybeCastNow()
+            }
+        }.start()
     }
 
     /** The file name of a content:// or file:// URI, e.g. "Movie.mkv". */
