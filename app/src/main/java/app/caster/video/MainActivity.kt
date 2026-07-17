@@ -8,6 +8,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.Menu
+import android.view.MenuItem
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.webkit.MimeTypeMap
@@ -190,6 +191,20 @@ class MainActivity : AppCompatActivity() {
         menuInflater.inflate(R.menu.main, menu)
         CastButtonFactory.setUpMediaRouteButton(this, menu, R.id.media_route_menu_item)
         return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean = when (item.itemId) {
+        R.id.action_source -> { openUrl(getString(R.string.url_source)); true }
+        R.id.action_support -> { openUrl(getString(R.string.url_support)); true }
+        else -> super.onOptionsItemSelected(item)
+    }
+
+    private fun openUrl(url: String) {
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+        } catch (e: Exception) {
+            Toast.makeText(this, R.string.no_browser, Toast.LENGTH_SHORT).show()
+        }
     }
 
     private fun handleIntent(intent: Intent) {

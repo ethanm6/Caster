@@ -26,4 +26,9 @@
     <string name="server_notification_title">Serving video to Chromecast</string>
     <string name="server_notification_text">Streaming a local file over Wi-Fi</string>
     <string name="server_notification_stop">Stop</string>
+    <string name="no_browser">No app found to open the link</string>
+    <string name="menu_source">Source code</string>
+    <string name="menu_support">Support development</string>
+    <string name="url_source">https://github.com/ethanm6/Caster</string>
+    <string name="url_support">https://ko-fi.com/ethanm6</string>
 </resources>

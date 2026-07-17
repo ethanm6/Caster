@@ -6,4 +6,12 @@
         android:title="@string/cast_button"
         app:actionProviderClass="androidx.mediarouter.app.MediaRouteActionProvider"
         app:showAsAction="always" />
+    <item
+        android:id="@+id/action_source"
+        android:title="@string/menu_source"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/action_support"
+        android:title="@string/menu_support"
+        app:showAsAction="never" />
 </menu>
